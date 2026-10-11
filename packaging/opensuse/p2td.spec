@@ -1,4 +1,8 @@
 # Build from a source tarball: packaging/opensuse/build-rpm.sh
+# Release build: skip auto -debuginfo/-debugsource (empty debugsourcefiles.list otherwise).
+%global _enable_debug_packages 0
+%define debug_package %{nil}
+
 Name:           p2td
 Version:        0.1.0
 Release:        1%{?dist}
@@ -13,7 +17,6 @@ BuildRequires:  qt6-svg-devel
 BuildRequires:  libX11-devel
 BuildRequires:  libXtst-devel
 BuildRequires:  pkgconfig(libpulse-simple)
-BuildRequires:  python3
 BuildRequires:  ImageMagick
 BuildRequires:  systemd-rpm-macros
 Requires:       pipewire-pulse
