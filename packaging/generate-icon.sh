@@ -7,4 +7,4 @@ if ! command -v convert >/dev/null 2>&1; then
   exit 1
 fi
 mkdir -p "$(dirname "$out")"
-convert -size 128x128 xc:none -fill '#44BB44' -draw 'circle 64,64 64,10' "$out"
+magick convert -size 128x128 xc:none -fill '#44BB44' -draw 'circle 64,64 64,10' "$out"
