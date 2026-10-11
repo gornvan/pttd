@@ -54,4 +54,23 @@ if(p2td_RELEASE_MINIMAL AND p2td_HAVE_RELEASE_IPO)
     set_property(TARGET p2td PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
-install(TARGETS p2td RUNTIME DESTINATION bin)
+include(GNUInstallDirs)
+
+set(P2TD_REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/..")
+set(P2TD_PACKAGING_DIR "${P2TD_REPO_ROOT}/packaging")
+
+install(TARGETS p2td RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+install(FILES "${P2TD_PACKAGING_DIR}/systemd/p2td.service"
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/systemd/user
+)
+
+install(FILES "${P2TD_PACKAGING_DIR}/p2td.desktop"
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/applications
+)
+
+if(EXISTS "${P2TD_PACKAGING_DIR}/p2td.png")
+    install(FILES "${P2TD_PACKAGING_DIR}/p2td.png"
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/48x48/apps
+    )
+endif()
