@@ -135,9 +135,9 @@ For **evdev** PTT, the **`p2td` binary** needs read access to `/dev/input/event*
 RPM **`p2td`** installs `/usr/bin/p2td` with **setgid `input`**, a **systemd user** unit, desktop entry, and menu icon.
 
 ```bash
-# Build RPM from a git checkout (creates ~/rpmbuild/SOURCES tarball)
+# Build RPM from a git checkout (writes to temporary ./dist/rpm/)
 packaging/opensuse/build-rpm.sh
-sudo zypper install ~/rpmbuild/RPMS/*/p2td-*.rpm
+sudo zypper install dist/rpm/RPMS/*/p2td-*.rpm
 
 systemctl --user enable --now p2td.service
 ```

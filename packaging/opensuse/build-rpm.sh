@@ -8,9 +8,13 @@ if [[ -z "$VERSION" ]]; then
   exit 1
 fi
 
+RPM_TOP="${ROOT}/dist/rpm"
+mkdir -p "${RPM_TOP}"/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+
 NAME="p2td-${VERSION}"
 TARBALL="${NAME}.tar.gz"
-SOURCES="${HOME}/rpmbuild/SOURCES"
-mkdir -p "$SOURCES"
-git -C "$ROOT" archive --format=tar.gz --prefix="${NAME}/" -o "${SOURCES}/${TARBALL}" HEAD
-rpmbuild -ba "$ROOT/packaging/opensuse/p2td.spec"
+git -C "$ROOT" archive --format=tar.gz --prefix="${NAME}/" -o "${RPM_TOP}/SOURCES/${TARBALL}" HEAD
+
+rpmbuild -ba --define "_topdir ${RPM_TOP}" "${ROOT}/packaging/opensuse/p2td.spec"
+
+echo "RPM(s): ${RPM_TOP}/RPMS/$(uname -m)/"
