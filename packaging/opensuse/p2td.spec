@@ -21,7 +21,7 @@ BuildRequires:  libXtst-devel
 BuildRequires:  pkgconfig(libpulse-simple)
 BuildRequires:  ImageMagick
 BuildRequires:  systemd-rpm-macros
-Requires:       pipewire-pulse
+Requires:       pipewire-pulseaudio
 
 %description
 Global push-to-talk: mute/unmute PulseAudio recording sources on button
