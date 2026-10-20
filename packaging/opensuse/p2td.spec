@@ -38,9 +38,12 @@ cmake --build build -j%{?_smp_build_cpus}
 mkdir -p %{buildroot}%{_datadir}/icons/hicolor/48x48/apps
 bash packaging/generate-icon.sh %{buildroot}%{_datadir}/icons/hicolor/48x48/apps/p2td.png
 cmake --install build --prefix %{buildroot}%{_prefix}
+install -d %{buildroot}%{_libexecdir}/p2td
+install -m 755 packaging/libexec/p2td-session-launch.sh %{buildroot}%{_libexecdir}/p2td/p2td-session-launch.sh
 
 %files
 %attr(2755, root, input) %{_bindir}/p2td
+%{_libexecdir}/p2td/p2td-session-launch.sh
 %{_libdir}/systemd/user/p2td.service
 %{_datadir}/applications/p2td.desktop
 %{_datadir}/icons/hicolor/48x48/apps/p2td.png

@@ -34,6 +34,19 @@ echo "p2td RPM Version: ${RPM_VERSION} (from: ${RAW_VERSION})"
 RPM_TOP="${ROOT}/dist/rpm"
 mkdir -p "${RPM_TOP}"/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
 
+REQUIRED_IN_GIT=(
+  packaging/libexec/p2td-session-launch.sh
+  packaging/systemd/p2td.service
+  packaging/opensuse/p2td.spec
+)
+for path in "${REQUIRED_IN_GIT[@]}"; do
+  if ! git -C "$ROOT" cat-file -e "HEAD:${path}" 2>/dev/null; then
+    echo "RPM source tarball is built from git HEAD; missing committed file: ${path}" >&2
+    echo "Stage and commit packaging changes, then re-run build-rpm.sh." >&2
+    exit 1
+  fi
+done
+
 NAME="p2td-${RPM_VERSION}"
 TARBALL="${NAME}.tar.gz"
 git -C "$ROOT" archive --format=tar.gz --prefix="${NAME}/" -o "${RPM_TOP}/SOURCES/${TARBALL}" HEAD

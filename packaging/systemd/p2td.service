@@ -4,7 +4,7 @@ PartOf=graphical-session.target
 After=graphical-session.target pipewire-pulse.service
 
 [Service]
-ExecStart=/usr/bin/p2td
+ExecStart=/usr/libexec/p2td/p2td-session-launch.sh
 Restart=on-failure
 RestartSec=2
 

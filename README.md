@@ -139,9 +139,16 @@ RPM **`p2td`** installs `/usr/bin/p2td` with **setgid `input`**, a **systemd use
 packaging/opensuse/build-rpm.sh
 packaging/opensuse/build-rpm.sh v0.2.0
 
-sudo zypper install dist/rpm/RPMS/*/p2td-*.rpm
+sudo zypper install ./dist/p2td-v*-opensuse-tumbleweed.*.rpm
+# or: sudo zypper install ./dist/rpm/RPMS/*/p2td-*.rpm  (main package only, not *debuginfo* / *test*)
+
+systemctl --user daemon-reload
 systemctl --user enable --now p2td.service
 ```
+
+The RPM installs the unit under **`/usr/lib/systemd/user/p2td.service`** or **`/usr/lib64/systemd/user/p2td.service`**. You do **not** need to copy it into `~/.config/systemd/user/` unless you want a **local override** (drop-in or edited copy). Enable/start uses the system path above.
+
+The unit runs **`/usr/libexec/p2td/p2td-session-launch.sh`**, which pulls `DISPLAY`, `DBUS_SESSION_BUS_ADDRESS`, and related variables from `systemctl --user show-environment` and sets **`QT_QPA_PLATFORM=xcb`** so the tray works on Plasma/Wayland (same as running `QT_QPA_PLATFORM=xcb p2td` in a terminal).
 
 Distribution for openSUSE is **zypper RPM** or the **portable tarball** (with setgid install); there is no Flatpak package.
 
@@ -264,6 +271,36 @@ cd p2td-v0.1.0-linux-x86_64-portable
 You still need PulseAudio or PipeWire-Pulse for mute/unmute. **PTT input** prefers **evdev** (setgid **`input`** on `/usr/bin/p2td` after system install — see **Portable tarball: evdev after unpack**); the portable tree is still **XCB/Qt-on-X11** for the tray UI. XRecord fallback needs an X11 session and `DISPLAY`.
 
 ## Troubleshooting
+
+### “System tray is not available on this desktop”
+
+PTT, Pulse, and sounds can work while the tray does not. The app uses Qt’s `QSystemTrayIcon`, which needs a **status notifier / system tray** on the panel (KDE **System Tray** widget, GNOME **AppIndicator** extension, etc.).
+
+**Check session:**
+
+```bash
+echo "type=$XDG_SESSION_TYPE display=$DISPLAY wayland=$WAYLAND_DISPLAY"
+```
+
+**Plasma on Wayland (common on openSUSE):** distro Qt may pick the native Wayland plugin and `isSystemTrayAvailable()` stays false. Force XCB (XWayland):
+
+```bash
+QT_QPA_PLATFORM=xcb /usr/bin/p2td
+```
+
+**Via systemd:** use a current RPM (session launcher + unit). Then:
+
+```bash
+systemctl --user daemon-reload
+systemctl --user restart p2td.service
+journalctl --user -u p2td.service -b --no-pager
+```
+
+If the tray still fails under systemd but works in a terminal, check `systemctl --user show-environment | grep -E 'DISPLAY|DBUS|WAYLAND'`. Log out and back in after the first `enable` so the graphical session exports those variables. Override the unit only if needed: `mkdir -p ~/.config/systemd/user` and `systemctl --user edit p2td.service` (or copy the unit there and edit).
+
+**GNOME:** install and enable an AppIndicator / KStatusNotifierItem extension; stock GNOME has no tray.
+
+**Headless / SSH:** no tray; use config at `~/.local/p2td/config.yml` and stop the process with `pkill p2td` or a user systemd unit.
 
 ### `GLIBC_2.xx not found` when running the portable tarball
 

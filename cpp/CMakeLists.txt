@@ -65,6 +65,10 @@ install(FILES "${P2TD_PACKAGING_DIR}/systemd/p2td.service"
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/systemd/user
 )
 
+install(PROGRAMS "${P2TD_PACKAGING_DIR}/libexec/p2td-session-launch.sh"
+    DESTINATION ${CMAKE_INSTALL_LIBEXECDIR}/p2td
+)
+
 install(FILES "${P2TD_PACKAGING_DIR}/p2td.desktop"
     DESTINATION ${CMAKE_INSTALL_DATADIR}/applications
 )
