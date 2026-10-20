@@ -251,10 +251,6 @@ cd p2td-v0.1.0-linux-x86_64-portable
 
 You still need PulseAudio or PipeWire-Pulse for mute/unmute. **PTT input** prefers **evdev** (setgid **`input`** on `/usr/bin/p2td` after system install — see **Portable tarball: evdev after unpack**); the portable tree is still **XCB/Qt-on-X11** for the tray UI. XRecord fallback needs an X11 session and `DISPLAY`.
 
-### Flatpak later
-
-Flatpak does **not** usually mean “one binary with Qt embedded.” It means the app is packaged against a **runtime** (for example a KDE/Qt runtime) declared in a manifest, plus your files. Bundling with linuxdeploy is still useful as a stepping stone or for non-Flatpak distribution; a Flatpak manifest would declare dependencies differently.
-
 ## Troubleshooting
 
 ### `GLIBC_2.xx not found` when running the portable tarball
