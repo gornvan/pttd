@@ -2,12 +2,13 @@
 # Bump the patch component (third number) of the latest vMAJOR.MINOR.PATCH tag and push it.
 #
 # Usage (from repo root):
-#   ./releaseNextMinor.sh
+#   .github/scripts/releaseNextPatch.sh
 #
-# Triggers the Release workflow (push tag v*).
+# Triggers the Release workflow (push tag v*). Git tag is the release version for
+# portable tarball and RPM; CMake project(VERSION) is not auto-bumped.
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "${REPO_ROOT}"
 
 if ! git rev-parse --git-dir >/dev/null 2>&1; then

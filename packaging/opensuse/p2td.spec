@@ -4,7 +4,8 @@
 %define debug_package %{nil}
 
 Name:           p2td
-Version:        0.1.0
+# Pass at build time: rpmbuild --define "p2td_version …" (see packaging/opensuse/build-rpm.sh)
+Version:        %{p2td_version}
 Release:        1%{?dist}
 Summary:        Push-to-talk daemon with system tray (evdev, PulseAudio)
 License:        MIT
@@ -13,6 +14,7 @@ Source0:        %{name}-%{version}.tar.gz
 BuildRequires:  cmake >= 3.20
 BuildRequires:  gcc-c++
 BuildRequires:  pkgconfig
+BuildRequires:  qt6-base-devel
 BuildRequires:  qt6-svg-devel
 BuildRequires:  libX11-devel
 BuildRequires:  libXtst-devel

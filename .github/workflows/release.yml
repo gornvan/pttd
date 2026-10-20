@@ -9,8 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  release:
-    # Match README portable baseline (glibc 2.35); ubuntu-latest bundles newer Qt/glibc.
+  portable:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
@@ -38,8 +37,59 @@ jobs:
           RELEASE_VERSION: ${{ github.ref_name }}
         run: bash .github/scripts/build-portable-bundle.sh "${RELEASE_VERSION}"
 
+      - name: Upload portable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: portable
+          path: dist/p2td-${{ github.ref_name }}-linux-x86_64-portable.tar.gz
+
+  rpm:
+    runs-on: ubuntu-latest
+    container:
+      image: registry.opensuse.org/opensuse/tumbleweed
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install build dependencies
+        run: |
+          zypper -n refresh
+          zypper -n install \
+            rpm-build \
+            git \
+            cmake \
+            gcc-c++ \
+            pkg-config \
+            qt6-base-devel \
+            qt6-svg-devel \
+            libX11-devel \
+            libXtst-devel \
+            libpulse-devel \
+            ImageMagick \
+            systemd-rpm-macros
+
+      - name: Build openSUSE RPM
+        run: bash .github/scripts/build-opensuse-rpm.sh "${{ github.ref_name }}"
+
+      - name: Upload RPM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rpm
+          path: dist/p2td-${{ github.ref_name }}-opensuse-tumbleweed.*.rpm
+
+  release:
+    needs: [portable, rpm]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/p2td-${{ github.ref_name }}-linux-x86_64-portable.tar.gz
+          files: |
+            release-assets/portable/*
+            release-assets/rpm/*
           generate_release_notes: true

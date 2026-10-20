@@ -96,7 +96,7 @@ Qt6 including **Svg** (tray icons are SVG files loaded via `QSvgRenderer`, not t
 
 | Role | Debian / Ubuntu | openSUSE |
 |------|-----------------|----------|
-| Qt6 Core, Gui, Widgets | `qt6-base-dev` (+ **`libgl-dev`** on minimal images so CMake finds `WrapOpenGL`) | Qt6 devel metapackage / `qt6-core-devel` etc. (same as any Qt6 app) |
+| Qt6 Core, Gui, Widgets | `qt6-base-dev` (+ **`libgl-dev`** on minimal images so CMake finds `WrapOpenGL`) | **`qt6-base-devel`** (meta); or `qt6-core-devel` + Gui/Widgets devel as needed |
 | Qt6 Svg | **`libqt6svg6-dev`** on Ubuntu 22.04; **`qt6-svg-dev`** on Ubuntu 24.04+ (same CMake target) | **`qt6-svg-devel`** (`libQt6Svg6` alone is runtime-only and will **not** satisfy CMake — `zypper wp …/Qt6SvgConfig.cmake`) |
 | X11 | `libx11-dev` | `libX11-devel` |
 | XTest (XRecord input fallback) | `libxtst-dev` | `libXtst-devel` |
@@ -135,16 +135,19 @@ For **evdev** PTT, the **`p2td` binary** needs read access to `/dev/input/event*
 RPM **`p2td`** installs `/usr/bin/p2td` with **setgid `input`**, a **systemd user** unit, desktop entry, and menu icon.
 
 ```bash
-# Build RPM from a git checkout (writes to temporary ./dist/rpm/)
+# Build RPM from a git checkout (output under ./dist/rpm/; default RPM Version 0~debug.<timestamp>)
 packaging/opensuse/build-rpm.sh
-sudo zypper install dist/rpm/RPMS/*/p2td-*.rpm
+packaging/opensuse/build-rpm.sh 0.2.0   # explicit Version field
 
+sudo zypper install dist/rpm/RPMS/*/p2td-*.rpm
 systemctl --user enable --now p2td.service
 ```
 
+Distribution for openSUSE is **zypper RPM** or the **portable tarball** (with setgid install); there is no Flatpak package.
+
 Config and tray assets stay under **`~/.local/p2td/`**. Indicator WAVs are created under `~/.local/p2td/sounds/` on first run by the app.
 
-`packaging/opensuse/build-rpm.sh` builds from **`git archive HEAD`** — commit `packaging/systemd/p2td.service` and related files before running it.
+`packaging/opensuse/build-rpm.sh` builds from **`git archive HEAD`** — commit packaging files before running it. Release tags use the same script via CI (version from the tag, without the `v` prefix).
 
 ### Portable tarball: evdev after unpack
 
@@ -174,9 +177,20 @@ Same repo script as [Releases (portable Linux)](#releases-portable-linux) — [`
 
 linuxdeploy binaries are downloaded automatically on first run (cached under `~/.cache/p2td-release-tools`).
 
-## Releases (portable Linux)
+## Releases
 
-The GitHub Actions **Release** workflow and your machine can run the same script: [`.github/scripts/build-portable-bundle.sh`](.github/scripts/build-portable-bundle.sh).
+Pushing a **`v*`** git tag runs the **Release** workflow ([`.github/workflows/release.yml`](.github/workflows/release.yml)), which publishes **two** assets on GitHub Releases:
+
+| Asset | Build host |
+|-------|------------|
+| `p2td-<tag>-linux-x86_64-portable.tar.gz` | Ubuntu 22.04 ([`.github/scripts/build-portable-bundle.sh`](.github/scripts/build-portable-bundle.sh)) |
+| `p2td-<tag>-opensuse-tumbleweed.<arch>.rpm` | openSUSE Tumbleweed container ([`.github/scripts/build-opensuse-rpm.sh`](.github/scripts/build-opensuse-rpm.sh)) |
+
+The portable tarball is an AppDir-style bundle (glibc 2.35 baseline from 22.04). The RPM targets **openSUSE Tumbleweed**, installs **`/usr/bin/p2td`** with **setgid `input`**, and ships the **systemd user** unit. Bump release tags with [`.github/scripts/releaseNextPatch.sh`](.github/scripts/releaseNextPatch.sh) (tag is the release version; CMake `project(VERSION)` is not auto-bumped).
+
+### Portable-only dry-run (no GitHub Release)
+
+You can build the portable tarball locally with the same script as CI:
 
 ### Dry-run locally (no GitHub Release)
 
@@ -188,8 +202,6 @@ From the repo root, after installing build dependencies (same as README **Build*
 ```
 
 The tarball is written to **`dist/`** (`OUT_DIR`; override with env). linuxdeploy downloads are cached under **`~/.cache/p2td-release-tools`** unless you set **`p2td_RELEASE_TOOLS_DIR`**.
-
-Pushing a version tag triggers the **Release** workflow, which runs the same script with the tag name and uploads **`dist/p2td-<tag>-linux-x86_64-portable.tar.gz`** to GitHub Releases.
 
 That bundle is an **AppDir-style tree**: [linuxdeploy](https://github.com/linuxdeploy/linuxdeploy) plus the Qt plugin copy Qt libs next to the binary so recipients do not need system Qt packages.
 
@@ -216,7 +228,7 @@ The script configures **`p2td_RELEASE_MINIMAL=ON`** for smaller Release binaries
 
 #### When the tree stops shrinking (~tens of MB uncompressed)
 
-Portable builds use distro Qt (Release CI on **Ubuntu 22.04**), which on Ubuntu pulls **full ICU** as **`Qt6Core`’s transitive dependency**. **`libicudata.so`** (Unicode / locale payload) commonly dominates **`usr/lib/`** sizes; it is kept because **Qt**, not trimming heuristics, actually links it — `ldd`-closure pruning is already doing honest work here. Shrinking ICU further means distributing a Qt built with **minimal or no ICU**, which is outside this repo’s APT-based workflow (**Flatpak**/custom Qt / different distro runtimes).
+Portable builds use distro Qt (Release CI on **Ubuntu 22.04**), which on Ubuntu pulls **full ICU** as **`Qt6Core`’s transitive dependency**. **`libicudata.so`** (Unicode / locale payload) commonly dominates **`usr/lib/`** sizes; it is kept because **Qt**, not trimming heuristics, actually links it — `ldd`-closure pruning is already doing honest work here. Shrinking ICU further means distributing a Qt built with **minimal or no ICU**, which is outside this repo’s APT-based portable workflow (custom Qt / different distro runtimes).
 
 **`libQt6DBus`**, **`libdbus`**, **`glib`**, **`systemd`**: likewise normal fallout of Linux **Qt Gui** desktop integration (`QGuiApplication` pulls this stack on typical builds). Removing it would risk broken session/notifications/integration rather than reclaiming predictable space.
 
