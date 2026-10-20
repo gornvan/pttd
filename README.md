@@ -135,9 +135,9 @@ For **evdev** PTT, the **`p2td` binary** needs read access to `/dev/input/event*
 RPM **`p2td`** installs `/usr/bin/p2td` with **setgid `input`**, a **systemd user** unit, desktop entry, and menu icon.
 
 ```bash
-# Build RPM from a git checkout (output under ./dist/rpm/; default RPM Version 0~debug.<timestamp>)
+# Build RPM (installable copy under dist/; version from CMake unless you pass v0.2.0)
 packaging/opensuse/build-rpm.sh
-packaging/opensuse/build-rpm.sh 0.2.0   # explicit Version field
+packaging/opensuse/build-rpm.sh v0.2.0
 
 sudo zypper install dist/rpm/RPMS/*/p2td-*.rpm
 systemctl --user enable --now p2td.service
@@ -184,7 +184,7 @@ Pushing a **`v*`** git tag runs the **Release** workflow ([`.github/workflows/re
 | Asset | Build host |
 |-------|------------|
 | `p2td-<tag>-linux-x86_64-portable.tar.gz` | Ubuntu 22.04 ([`.github/scripts/build-portable-bundle.sh`](.github/scripts/build-portable-bundle.sh)) |
-| `p2td-<tag>-opensuse-tumbleweed.<arch>.rpm` | openSUSE Tumbleweed container ([`.github/scripts/build-opensuse-rpm.sh`](.github/scripts/build-opensuse-rpm.sh)) |
+| `p2td-<tag>-opensuse-tumbleweed.<arch>.rpm` | openSUSE Tumbleweed container ([`packaging/opensuse/build-rpm.sh`](packaging/opensuse/build-rpm.sh)) |
 
 The portable tarball is an AppDir-style bundle (glibc 2.35 baseline from 22.04). The RPM targets **openSUSE Tumbleweed**, installs **`/usr/bin/p2td`** with **setgid `input`**, and ships the **systemd user** unit. Bump release tags with [`.github/scripts/releaseNextPatch.sh`](.github/scripts/releaseNextPatch.sh) (tag is the release version; CMake `project(VERSION)` is not auto-bumped).
 
