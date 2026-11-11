@@ -44,11 +44,14 @@ install -m 755 packaging/libexec/p2td-session-launch.sh %{buildroot}%{_libexecdi
 # Ensure user unit is on systemd's search path (%{_userunitdir}, not lib64).
 install -d %{buildroot}%{_userunitdir}
 install -m 644 packaging/systemd/p2td.service %{buildroot}%{_userunitdir}/p2td.service
+install -d %{buildroot}%{_userpresetdir}
+install -m 644 packaging/systemd/90-p2td.preset %{buildroot}%{_userpresetdir}/90-p2td.preset
 
 %files
 %attr(2755, root, input) %{_bindir}/p2td
 %{_libexecdir}/p2td/p2td-session-launch.sh
 %{_userunitdir}/p2td.service
+%{_userpresetdir}/90-p2td.preset
 %{_datadir}/applications/p2td.desktop
 %{_datadir}/icons/hicolor/48x48/apps/p2td.png
 

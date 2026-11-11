@@ -296,15 +296,15 @@ echo "type=$XDG_SESSION_TYPE display=$DISPLAY wayland=$WAYLAND_DISPLAY"
 QT_QPA_PLATFORM=xcb /usr/bin/p2td
 ```
 
-**Via systemd:** use a current RPM (session launcher + unit). Then:
+**Via systemd:** use a current RPM (session launcher waits for KDE **StatusNotifierWatcher**, sets `QT_QPA_PLATFORM=xcb`). Prefer enabling at login, not only `start`:
 
 ```bash
 systemctl --user daemon-reload
-systemctl --user restart p2td.service
+systemctl --user enable --now p2td.service
 journalctl --user -u p2td.service -b --no-pager
 ```
 
-If the tray still fails under systemd but works in a terminal, check `systemctl --user show-environment | grep -E 'DISPLAY|DBUS|WAYLAND'`. Log out and back in after the first `enable` so the graphical session exports those variables. Override the unit only if needed: `mkdir -p ~/.config/systemd/user` and `systemctl --user edit p2td.service` (or copy the unit there and edit).
+If you see **`KDE platform plugin is loaded but SNI unavailable`**, Plasma’s tray host was not ready yet (rebuild with the current launcher) or the **System Tray** widget is missing from the panel. **`systemctl --user status`** may show **`/usr/bin/p2td`** as the process name even when the launcher ran (it `exec`s into the binary). Check **`ExecStart=`** is **`/usr/libexec/p2td/p2td-session-launch.sh`** in `systemctl --user cat p2td.service`.
 
 **GNOME:** install and enable an AppIndicator / KStatusNotifierItem extension; stock GNOME has no tray.
 

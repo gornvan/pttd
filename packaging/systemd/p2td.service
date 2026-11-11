@@ -5,6 +5,7 @@ After=graphical-session.target pipewire-pulse.service plasma-workspace.target
 Wants=graphical-session.target
 
 [Service]
+Type=exec
 ExecStart=/usr/libexec/p2td/p2td-session-launch.sh
 Restart=on-failure
 RestartSec=2

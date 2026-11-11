@@ -1,5 +1,5 @@
 #!/bin/bash
-# Merge graphical-session env into a user-systemd service (DISPLAY, D-Bus, …) and force Qt XCB for tray.
+# Merge graphical-session env into a user-systemd service and start p2td with a tray-friendly Qt setup.
 set -euo pipefail
 
 if command -v systemctl >/dev/null 2>&1; then
@@ -27,6 +27,31 @@ if [[ -z "${XAUTHORITY:-}" && -f "${HOME}/.Xauthority" ]]; then
   export XAUTHORITY="${HOME}/.Xauthority"
 fi
 
+# Tray on Plasma/Wayland: use XCB (XWayland). Avoid KDE QPA theme SNI path until watcher exists.
 export QT_QPA_PLATFORM=xcb
+export QT_QPA_PLATFORMTHEME=
+export QT_WAYLAND_DISABLE_GL=1
+
+wait_for_kde_sni() {
+  case "${XDG_CURRENT_DESKTOP:-}${DESKTOP_SESSION:-}" in
+    *KDE*|*plasma*|*Plasma*) ;;
+    *) return 0 ;;
+  esac
+  if ! command -v dbus-send >/dev/null 2>&1; then
+    return 0
+  fi
+  local max=60 i
+  for ((i = 0; i < max; i++)); do
+    if dbus-send --session --print-reply --dest=org.freedesktop.DBus /org/freedesktop/DBus \
+      org.freedesktop.DBus.NameHasOwner string:org.kde.StatusNotifierWatcher 2>/dev/null \
+      | grep -q 'boolean true'; then
+      return 0
+    fi
+    sleep 1
+  done
+  echo "p2td-session-launch: KDE StatusNotifierWatcher not ready after ${max}s; starting anyway" >&2
+}
+
+wait_for_kde_sni
 
 exec /usr/bin/p2td
