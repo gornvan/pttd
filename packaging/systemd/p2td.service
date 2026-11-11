@@ -1,11 +1,13 @@
 [Unit]
 Description=Push-to-talk daemon (p2td)
 PartOf=graphical-session.target
-After=graphical-session.target pipewire-pulse.service plasma-workspace.target
+After=graphical-session.target pipewire-pulse.service plasma-workspace.target plasma-plasmashell.service
 Wants=graphical-session.target
 
 [Service]
 Type=exec
+Environment=XDG_RUNTIME_DIR=%t
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=%t/bus
 ExecStart=/usr/libexec/p2td/p2td-session-launch.sh
 Restart=on-failure
 RestartSec=2

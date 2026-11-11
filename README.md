@@ -304,7 +304,7 @@ systemctl --user enable --now p2td.service
 journalctl --user -u p2td.service -b --no-pager
 ```
 
-If you see **`KDE platform plugin is loaded but SNI unavailable`**, Plasma’s tray host was not ready yet (rebuild with the current launcher) or the **System Tray** widget is missing from the panel. **`systemctl --user status`** may show **`/usr/bin/p2td`** as the process name even when the launcher ran (it `exec`s into the binary). Check **`ExecStart=`** is **`/usr/libexec/p2td/p2td-session-launch.sh`** in `systemctl --user cat p2td.service`.
+If you see **`KDE platform plugin is loaded but SNI unavailable`**, the service process is not on the same session D-Bus as Plasma (rebuild with the current unit/launcher), plasmashell is not up yet, or the **System Tray** widget is missing from the panel. Compare with **`QT_QPA_PLATFORM=xcb /usr/bin/p2td`** in a terminal (should match). **`systemctl --user status`** may show **`/usr/bin/p2td`** as the process name even when the launcher ran (it `exec`s into the binary). Check **`ExecStart=`** is **`/usr/libexec/p2td/p2td-session-launch.sh`** in `systemctl --user cat p2td.service`.
 
 **GNOME:** install and enable an AppIndicator / KStatusNotifierItem extension; stock GNOME has no tray.
 
