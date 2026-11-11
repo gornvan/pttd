@@ -1,7 +1,8 @@
 [Unit]
 Description=Push-to-talk daemon (p2td)
 PartOf=graphical-session.target
-After=graphical-session.target pipewire-pulse.service
+After=graphical-session.target pipewire-pulse.service plasma-workspace.target
+Wants=graphical-session.target
 
 [Service]
 ExecStart=/usr/libexec/p2td/p2td-session-launch.sh
