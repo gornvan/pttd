@@ -61,8 +61,9 @@ set(P2TD_PACKAGING_DIR "${P2TD_REPO_ROOT}/packaging")
 
 install(TARGETS p2td RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
+# Distro user units live under /usr/lib/systemd/user (not lib64); see systemd.unit(5).
 install(FILES "${P2TD_PACKAGING_DIR}/systemd/p2td.service"
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/systemd/user
+    DESTINATION lib/systemd/user
 )
 
 install(PROGRAMS "${P2TD_PACKAGING_DIR}/libexec/p2td-session-launch.sh"

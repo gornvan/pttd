@@ -22,6 +22,7 @@ BuildRequires:  pkgconfig(libpulse-simple)
 BuildRequires:  ImageMagick
 BuildRequires:  systemd-rpm-macros
 Requires:       pipewire-pulseaudio
+%systemd_ordering
 
 %description
 Global push-to-talk: mute/unmute PulseAudio recording sources on button
@@ -40,13 +41,19 @@ bash packaging/generate-icon.sh %{buildroot}%{_datadir}/icons/hicolor/48x48/apps
 cmake --install build --prefix %{buildroot}%{_prefix}
 install -d %{buildroot}%{_libexecdir}/p2td
 install -m 755 packaging/libexec/p2td-session-launch.sh %{buildroot}%{_libexecdir}/p2td/p2td-session-launch.sh
+# Ensure user unit is on systemd's search path (%{_userunitdir}, not lib64).
+install -d %{buildroot}%{_userunitdir}
+install -m 644 packaging/systemd/p2td.service %{buildroot}%{_userunitdir}/p2td.service
 
 %files
 %attr(2755, root, input) %{_bindir}/p2td
 %{_libexecdir}/p2td/p2td-session-launch.sh
-%{_libdir}/systemd/user/p2td.service
+%{_userunitdir}/p2td.service
 %{_datadir}/applications/p2td.desktop
 %{_datadir}/icons/hicolor/48x48/apps/p2td.png
+
+%pre
+%systemd_user_pre p2td.service
 
 %post
 %systemd_user_post p2td.service

@@ -130,7 +130,7 @@ From the **repository root** (same place you ran `cmake`):
 
 For **evdev** PTT, the **`p2td` binary** needs read access to `/dev/input/event*` (see **Binds** → permissions). The **tray** and **XRecord** fallback still need a display (`DISPLAY` set; X11 or XWayland with XCB). PulseAudio or PipeWire-Pulse is the target for mute/unmute.
 
-### openSUSE package (zypper)
+### openSUSE package (zypper) & installation
 
 RPM **`p2td`** installs `/usr/bin/p2td` with **setgid `input`**, a **systemd user** unit, desktop entry, and menu icon.
 
@@ -146,7 +146,15 @@ systemctl --user daemon-reload
 systemctl --user enable --now p2td.service
 ```
 
-The RPM installs the unit under **`/usr/lib/systemd/user/p2td.service`** or **`/usr/lib64/systemd/user/p2td.service`**. You do **not** need to copy it into `~/.config/systemd/user/` unless you want a **local override** (drop-in or edited copy). Enable/start uses the system path above.
+The RPM installs the unit as **`/usr/lib/systemd/user/p2td.service`** (openSUSE expects user units under **`lib`**, not `lib64`). You do **not** need to copy it into `~/.config/systemd/user/` unless you want a **local override**. If you previously copied an old unit there and `systemctl --user status` shows **`/home/…/.config/systemd/user/p2td.service`** with **`ExecStart=/usr/bin/p2td`**, remove or update it — that shadowing skips the session launcher:
+
+```bash
+rm -f ~/.config/systemd/user/p2td.service
+systemctl --user daemon-reload
+systemctl --user enable --now p2td.service
+```
+
+`systemctl --user status` should show **`ExecStart=/usr/libexec/p2td/p2td-session-launch.sh`** (from the packaged unit).
 
 The unit runs **`/usr/libexec/p2td/p2td-session-launch.sh`**, which pulls `DISPLAY`, `DBUS_SESSION_BUS_ADDRESS`, and related variables from `systemctl --user show-environment` and sets **`QT_QPA_PLATFORM=xcb`** so the tray works on Plasma/Wayland (same as running `QT_QPA_PLATFORM=xcb p2td` in a terminal).
 

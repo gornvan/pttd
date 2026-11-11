@@ -12,6 +12,7 @@
 #include <QRectF>
 #include <QtSvg/QSvgRenderer>
 #include <QSystemTrayIcon>
+#include <QTimer>
 
 namespace {
 
@@ -111,7 +112,25 @@ void TrayIconManager::showIcon(const std::function<void()> &onOpenConfig,
     if (trayIcon_) {
         return;
     }
+    onOpenConfig_ = onOpenConfig;
+    onTerminate_ = onTerminate;
+    trayShowAttempts_ = 0;
+    tryShowIcon();
+}
+
+void TrayIconManager::tryShowIcon() {
+    if (trayIcon_) {
+        return;
+    }
+
+    constexpr int kMaxAttempts = 12;
     if (!QSystemTrayIcon::isSystemTrayAvailable()) {
+        if (trayShowAttempts_ < kMaxAttempts) {
+            ++trayShowAttempts_;
+            qWarning() << "System tray not yet available; retry" << trayShowAttempts_ << "of" << kMaxAttempts;
+            QTimer::singleShot(1500, this, [this]() { tryShowIcon(); });
+            return;
+        }
         qWarning() << "System tray is not available on this desktop. Continuing without tray icon.";
         return;
     }
@@ -120,16 +139,16 @@ void TrayIconManager::showIcon(const std::function<void()> &onOpenConfig,
     menu_ = new QMenu();
 
     QAction *openConfigAction = menu_->addAction("Open config");
-    QObject::connect(openConfigAction, &QAction::triggered, this, [onOpenConfig]() {
-        if (onOpenConfig) {
-            onOpenConfig();
+    QObject::connect(openConfigAction, &QAction::triggered, this, [this]() {
+        if (onOpenConfig_) {
+            onOpenConfig_();
         }
     });
 
     QAction *terminateAction = menu_->addAction("Terminate");
-    QObject::connect(terminateAction, &QAction::triggered, this, [onTerminate]() {
-        if (onTerminate) {
-            onTerminate();
+    QObject::connect(terminateAction, &QAction::triggered, this, [this]() {
+        if (onTerminate_) {
+            onTerminate_();
         }
     });
 
@@ -137,6 +156,20 @@ void TrayIconManager::showIcon(const std::function<void()> &onOpenConfig,
     trayIcon_->setToolTip("PaX Push-to-Talk");
     trayIcon_->setContextMenu(menu_);
     trayIcon_->show();
+
+    if (!trayIcon_->isVisible() && trayShowAttempts_ < kMaxAttempts) {
+        ++trayShowAttempts_;
+        qWarning() << "Tray icon not visible yet; retry" << trayShowAttempts_;
+        trayIcon_->deleteLater();
+        trayIcon_ = nullptr;
+        menu_->deleteLater();
+        menu_ = nullptr;
+        QTimer::singleShot(1500, this, [this]() { tryShowIcon(); });
+    }
+}
+
+bool TrayIconManager::isShown() const {
+    return trayIcon_ != nullptr;
 }
 
 void TrayIconManager::hideIcon() {
