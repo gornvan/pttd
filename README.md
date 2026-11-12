@@ -41,7 +41,7 @@ BIND_PTT: [KEY_CAPSLOCK]
 
 **Input backends:** p2td tries **evdev** first (reads `/dev/input/by-id/*-event-mouse` and `*-event-kbd`). If devices cannot be opened, it falls back to **XRecord** on X11 and maps the same `BIND_PTT` tokens to X11 buttons/keycodes internally. Startup logs `PTT input: evdev` or `PTT input: xrecord`.
 
-**Permissions (evdev):** `/dev/input/event*` nodes are usually `root:input`. Prefer installing **`p2td` binary owned by `root:input` with mode `2755` (with setgid)** so only the **`p2td` process** gets group `input`, not your whole login account (see **openSUSE package** and **portable** sections below). For a quick local build test you can use `sudo usermod -aG input "$USER"` and re-login instead.
+**Permissions (evdev):** `/dev/input/event*` nodes are usually `root:input`. The RPM installs **`/usr/libexec/p2td/p2td-evdev-acquire`** with **setgid `input`** (mode `2755`); **`/usr/bin/p2td` stays `755`** so the Qt tray works on KDE. The helper opens devices and passes fds to the GUI (no setgid on the Qt process — KDE StatusNotifier breaks under setgid). See **openSUSE package** and **portable** below. For a dev build without the helper, use `sudo usermod -aG input "$USER"` and re-login.
 
 **Finding `BTN_*` / `KEY_*` codes** — use evdev event devices, not X11 `xev` button numbers:
 
@@ -132,7 +132,7 @@ For **evdev** PTT, the **`p2td` binary** needs read access to `/dev/input/event*
 
 ### openSUSE package (zypper) & installation
 
-RPM **`p2td`** installs `/usr/bin/p2td` with **setgid `input`**, a **systemd user** unit, desktop entry, and menu icon.
+RPM **`p2td`** installs `/usr/bin/p2td` (normal permissions), **`p2td-evdev-acquire`** (setgid `input`), a **systemd user** unit, desktop entry, and menu icon.
 
 ```bash
 # Build RPM (installable copy under dist/; version from CMake unless you pass v0.2.0)
@@ -172,11 +172,13 @@ Extracting the archive does **not** set setgid or `root:input`. To use **evdev**
 tar xf p2td-*-linux-x86_64-portable.tar.gz
 cd p2td-*-linux-x86_64-portable
 sudo cp -a usr/lib/. /usr/lib/
-sudo install -m 2755 -o root -g input usr/bin/p2td /usr/bin/p2td
+sudo install -m 755 usr/bin/p2td /usr/bin/p2td
+sudo install -d /usr/libexec/p2td
+sudo install -m 2755 -o root -g input usr/libexec/p2td/p2td-evdev-acquire /usr/libexec/p2td/p2td-evdev-acquire
 p2td    # run as your normal session user
 ```
 
-Use **`/usr/bin/p2td`** (or **`AppRun`** only for a trial without evdev). **`AppRun`** alone does not apply setgid.
+Use **`/usr/bin/p2td`** after installing the helper (or **`AppRun`** for a tray trial without evdev). Do **not** set setgid on `/usr/bin/p2td` — it breaks the KDE tray.
 
 ### Optional: portable AppDir tarball
 
@@ -201,7 +203,7 @@ Pushing a **`v*`** git tag runs the **Release** workflow ([`.github/workflows/re
 | `p2td-<tag>-linux-x86_64-portable.tar.gz` | Ubuntu 22.04 ([`.github/scripts/build-portable-bundle.sh`](.github/scripts/build-portable-bundle.sh)) |
 | `p2td-<tag>-opensuse-tumbleweed.<arch>.rpm` | openSUSE Tumbleweed container ([`packaging/opensuse/build-rpm.sh`](packaging/opensuse/build-rpm.sh)) |
 
-The portable tarball is an AppDir-style bundle (glibc 2.35 baseline from 22.04). The RPM targets **openSUSE Tumbleweed**, installs **`/usr/bin/p2td`** with **setgid `input`**, and ships the **systemd user** unit. Bump release tags with [`.github/scripts/releaseNextPatch.sh`](.github/scripts/releaseNextPatch.sh) (tag is the release version; CMake `project(VERSION)` is not auto-bumped).
+The portable tarball is an AppDir-style bundle (glibc 2.35 baseline from 22.04). The RPM targets **openSUSE Tumbleweed**, installs **`/usr/bin/p2td`** plus **`p2td-evdev-acquire`** (setgid `input`), and ships the **systemd user** unit. Bump release tags with [`.github/scripts/releaseNextPatch.sh`](.github/scripts/releaseNextPatch.sh) (tag is the release version; CMake `project(VERSION)` is not auto-bumped).
 
 ### Portable-only dry-run (no GitHub Release)
 
@@ -276,7 +278,7 @@ cd p2td-v0.1.0-linux-x86_64-portable
 ./AppRun
 ```
 
-You still need PulseAudio or PipeWire-Pulse for mute/unmute. **PTT input** prefers **evdev** (setgid **`input`** on `/usr/bin/p2td` after system install — see **Portable tarball: evdev after unpack**); the portable tree is still **XCB/Qt-on-X11** for the tray UI. XRecord fallback needs an X11 session and `DISPLAY`.
+You still need PulseAudio or PipeWire-Pulse for mute/unmute. **PTT input** prefers **evdev** via **`p2td-evdev-acquire`** (setgid `input` — see **Portable tarball: evdev after unpack**); the portable tree is still **XCB/Qt-on-X11** for the tray UI. XRecord fallback needs an X11 session and `DISPLAY`.
 
 ## Troubleshooting
 
@@ -304,7 +306,7 @@ systemctl --user enable --now p2td.service
 journalctl --user -u p2td.service -b --no-pager
 ```
 
-If you see **`KDE platform plugin is loaded but SNI unavailable`**, the service process is not on the same session D-Bus as Plasma (rebuild with the current unit/launcher), plasmashell is not up yet, or the **System Tray** widget is missing from the panel. Compare with **`QT_QPA_PLATFORM=xcb /usr/bin/p2td`** in a terminal (should match). **`systemctl --user status`** may show **`/usr/bin/p2td`** as the process name even when the launcher ran (it `exec`s into the binary). Check **`ExecStart=`** is **`/usr/libexec/p2td/p2td-session-launch.sh`** in `systemctl --user cat p2td.service`.
+If you see **`KDE platform plugin is loaded but SNI unavailable`**, **`/usr/bin/p2td` must not be setgid** (KDE StatusNotifier fails when the Qt process has an elevated group). The RPM ships setgid on **`/usr/libexec/p2td/p2td-evdev-acquire`** only. Portable **`AppRun`** must stay non-setgid; apply setgid only to the helper after install. Also confirm the **System Tray** widget is on the panel and **`ExecStart=/usr/libexec/p2td/p2td-session-launch.sh`**.
 
 **GNOME:** install and enable an AppIndicator / KStatusNotifierItem extension; stock GNOME has no tray.
 

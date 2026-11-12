@@ -3,6 +3,7 @@
 #include "config_manager.hpp"
 #include "evdev_codes.hpp"
 #include "evdev_device_paths.hpp"
+#include "evdev_fd_client.hpp"
 
 #include <QDebug>
 
@@ -46,15 +47,24 @@ bool EvdevPttInputBackend::openInputDevices() {
     closeInputDevices();
     const QStringList paths = discoverEvdevInputDevicePaths();
     qInfo() << "evdev: discovered" << paths.size() << "input device path(s)";
-    for (const QString &path : paths) {
-        const QByteArray pathUtf8 = path.toUtf8();
-        const int fd = open(pathUtf8.constData(), O_RDONLY | O_NONBLOCK);
-        if (fd < 0) {
-            qInfo() << "evdev: skip" << path << "-" << std::strerror(errno);
-            continue;
+
+    std::vector<int> helperFds;
+    if (acquireEvdevFdsViaHelper(paths, helperFds) && !helperFds.empty()) {
+        qInfo() << "evdev: acquired" << helperFds.size() << "device fd(s) via setgid helper";
+        for (int fd : helperFds) {
+            deviceFds_.push_back(fd);
         }
-        qInfo() << "evdev: opened" << path;
-        deviceFds_.push_back(fd);
+    } else {
+        for (const QString &path : paths) {
+            const QByteArray pathUtf8 = path.toUtf8();
+            const int fd = open(pathUtf8.constData(), O_RDONLY | O_NONBLOCK);
+            if (fd < 0) {
+                qInfo() << "evdev: skip" << path << "-" << std::strerror(errno);
+                continue;
+            }
+            qInfo() << "evdev: opened" << path;
+            deviceFds_.push_back(fd);
+        }
     }
     if (deviceFds_.empty()) {
         qWarning() << "evdev: no input devices could be opened (need 'input' group or root?)";

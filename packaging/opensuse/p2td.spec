@@ -26,7 +26,7 @@ Requires:       pipewire-pulseaudio
 
 %description
 Global push-to-talk: mute/unmute PulseAudio recording sources on button
-press/release. Qt system tray, evdev input (setgid input on the binary).
+press/release. Qt system tray; evdev via setgid helper (main binary stays non-setgid for tray).
 
 %prep
 %setup -q -n %{name}-%{version}
@@ -48,7 +48,8 @@ install -d %{buildroot}%{_userpresetdir}
 install -m 644 packaging/systemd/90-p2td.preset %{buildroot}%{_userpresetdir}/90-p2td.preset
 
 %files
-%attr(2755, root, input) %{_bindir}/p2td
+%{_bindir}/p2td
+%attr(2755, root, input) %{_libexecdir}/p2td/p2td-evdev-acquire
 %{_libexecdir}/p2td/p2td-session-launch.sh
 %{_userunitdir}/p2td.service
 %{_userpresetdir}/90-p2td.preset

@@ -35,6 +35,11 @@ add_executable(p2td
     ${CPP_SOURCES}
 )
 
+add_executable(p2td-evdev-acquire
+    tools/p2td-evdev-acquire.cpp
+)
+set_target_properties(p2td-evdev-acquire PROPERTIES AUTOMOC OFF AUTOUIC OFF AUTORCC OFF)
+
 target_include_directories(p2td PRIVATE
     include
     "${CMAKE_CURRENT_SOURCE_DIR}/../.github/scripts/vendor"
@@ -60,6 +65,7 @@ set(P2TD_REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/..")
 set(P2TD_PACKAGING_DIR "${P2TD_REPO_ROOT}/packaging")
 
 install(TARGETS p2td RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(TARGETS p2td-evdev-acquire RUNTIME DESTINATION ${CMAKE_INSTALL_LIBEXECDIR}/p2td)
 
 # Distro user units live under /usr/lib/systemd/user (not lib64); see systemd.unit(5).
 install(FILES "${P2TD_PACKAGING_DIR}/systemd/p2td.service"

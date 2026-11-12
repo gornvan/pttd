@@ -265,6 +265,14 @@ echo "Bundling portable AppDir (linuxdeploy Qt plugin, QMAKE=${QMAKE})..."
         --plugin qt
 )
 
+HELPER_EXE="${BIN_DIR}/p2td-evdev-acquire"
+if [[ -f "${HELPER_EXE}" ]]; then
+    echo "Adding p2td-evdev-acquire (setgid when installed system-wide; AppDir stays non-setgid)..."
+    mkdir -p "${REPO_ROOT}/${APPDIR_NAME}/usr/libexec/p2td"
+    install -m 755 "${HELPER_EXE}" "${REPO_ROOT}/${APPDIR_NAME}/usr/libexec/p2td/p2td-evdev-acquire"
+    strip --strip-unneeded "${REPO_ROOT}/${APPDIR_NAME}/usr/libexec/p2td/p2td-evdev-acquire" 2>/dev/null || true
+fi
+
 echo "Stripping bundled shared libraries..."
 find "${REPO_ROOT}/${APPDIR_NAME}" -type f \( -name '*.so' -o -name '*.so.*' \) -print0 \
     | while IFS= read -r -d '' f; do

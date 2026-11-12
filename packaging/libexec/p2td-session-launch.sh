@@ -28,9 +28,22 @@ if [[ -z "${XAUTHORITY:-}" && -f "${HOME}/.Xauthority" ]]; then
   export XAUTHORITY="${HOME}/.Xauthority"
 fi
 
-# Tray on Plasma/Wayland: match a working manual launch (QT_QPA_PLATFORM=xcb only).
-# Do not clear QT_QPA_PLATFORMTHEME — that breaks KDE StatusNotifierItem while still loading the KDE plugin.
 export QT_QPA_PLATFORM=xcb
+
+# Plasma on Wayland + XCB (XWayland): KDE session markers make Qt take a dead-end
+# SNI branch (log: "KDE platform plugin is loaded but SNI unavailable") instead of
+# calling RegisterStatusNotifierItem on org.kde.StatusNotifierWatcher. Strip only
+# those markers; keep DISPLAY, WAYLAND_DISPLAY, and the session bus.
+if [[ "${XDG_SESSION_TYPE:-}" == wayland* ]]; then
+  case "${DESKTOP_SESSION:-}${XDG_CURRENT_DESKTOP:-}" in
+    *KDE*|*kde*|*plasma*|*Plasma*)
+      unset KDE_FULL_SESSION
+      unset XDG_CURRENT_DESKTOP
+      unset XDG_SESSION_DESKTOP
+      export QT_QPA_PLATFORMTHEME=
+      ;;
+  esac
+fi
 
 wait_for_kde_sni() {
   case "${XDG_CURRENT_DESKTOP:-}${DESKTOP_SESSION:-}" in

@@ -7,8 +7,6 @@
 #include <atomic>
 #include <memory>
 
-#include <unistd.h>
-
 #include <X11/Xlib.h>
 
 #include "config_manager.hpp"
@@ -18,21 +16,6 @@
 #include "tray_icon_manager.hpp"
 
 namespace {
-
-/** Qt reads the session bus at QGuiApplication construction; align with Plasma before that. */
-void ensureGraphicalSessionEnv() {
-    if (qEnvironmentVariableIsEmpty("XDG_RUNTIME_DIR")) {
-        const QByteArray rt = QByteArray("/run/user/") + QByteArray::number(getuid());
-        qputenv("XDG_RUNTIME_DIR", rt);
-    }
-    const QByteArray rt = qgetenv("XDG_RUNTIME_DIR");
-    if (!rt.isEmpty()) {
-        qputenv("DBUS_SESSION_BUS_ADDRESS", QByteArray("unix:path=") + rt + "/bus");
-    }
-    if (!qEnvironmentVariableIsSet("QT_QPA_PLATFORM")) {
-        qputenv("QT_QPA_PLATFORM", "xcb");
-    }
-}
 
 void openConfigFile(const QString &path) {
     const QList<QStringList> candidates = {
@@ -60,7 +43,6 @@ void openConfigFile(const QString &path) {
 } // namespace
 
 int main(int argc, char *argv[]) {
-    ensureGraphicalSessionEnv();
     QApplication app(argc, argv);
     app.setApplicationName("p2td");
 
